@@ -13,4 +13,3 @@ if __name__ == "__main__":
         json_object = json.dumps(outputd, indent=4)
         with open("answer.json", "w", encoding='utf8') as outfile:
             outfile.write(json_object)
-

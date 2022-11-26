@@ -23,51 +23,36 @@ def find_combos(layout):
     def find_combos1(table_data):
         def pckt_looper(rside):
             def bpattern_loop(indx):
-                def chk_pair(combo):
-                    return abs(combo[0] - combo[1]) > 1
-                def chk_cons_pock(one_pock):
-                    if len(one_pock) < 2:
-                        return True
-                    return all(map(chk_pair, list(combinations(one_pock, 2))))
-                def cons_check(chk_comb):
-                    return all(list(map(chk_cons_pock, chk_comb)))
-                def includepp(ind_con):
-                    def includepp_inner(hval):
-                        return list(ind_con[hval]) + \
-                                table_data['layout']['table'][rside][hval]
-                    return includepp_inner
-                def chk_a_cons(ind_con):
-                    return list(map(includepp(ind_con),
-                                    list(range(0, len(ind_con)))))
-                def cons_loop(a_cons):
-                    return list(map(chk_a_cons, a_cons))
                 def remove_cons(combs):
-                    return list(filter(cons_check, cons_loop(combs)))
-                def b_adj():
-                    return table_data['layout']['extra_b'][rside] + \
-                            table_data['guesses'][rside][indx]
-                def fix_pockets(bpattern):
-                    def fix_pockets_inner(indxf):
-                        return bpattern[indxf] - len(
-                                table_data['layout']['table'][rside][indxf])
-                    return fix_pockets_inner
-                def p_adj(bpattern):
-                    def p_adj_inner():
-                        return list(map(fix_pockets(bpattern),
-                                        list(range(0, 3))))
-                    return p_adj_inner
+                    return list(filter(lambda a :
+                        all(list(map(lambda b : True if len(a) < 2
+                            else all(map(lambda c : abs(c[0] - c[1]) > 1,
+                                list(combinations(b, 2))
+                            )), a
+                        ))),
+                        list(map(lambda b :
+                            list(map(lambda a :
+                                list(b[a]) +
+                                table_data['layout']['table'][rside][a],
+                                list(range(0, len(b)))
+                            )),
+                        combs))
+                    ))
                 def inner_bpattern_loop(bpattern):
-                    return remove_cons(gen_combos([b_adj(),
-                            p_adj(bpattern)()]))
+                    return remove_cons(gen_combos([
+                        table_data['layout']['extra_b'][rside] +
+                        table_data['guesses'][rside][indx],
+                        list(map(lambda a : bpattern[a] -
+                            len(table_data['layout']['table'][rside][a]),
+                            list(range(0, 3))
+                        ))
+                    ]))
                 return inner_bpattern_loop
             def dpt_indx(indx):
                 return list(map(bpattern_loop(indx),
-                                table_data['ball_patterns'][rside]))
+                    table_data['ball_patterns'][rside]))
             return dpt_indx
-        def guess_loop(indx):
-            return [pckt_looper(0)(indx), pckt_looper(1)(indx)]
-        def inner_find_combos():
-            return list(map(guess_loop, list(
-                    range(0, len(table_data['guesses'][0])))))
-        return inner_find_combos
-    return find_combos1(get_start_info(layout))()
+        return list(map(lambda a : [pckt_looper(0)(a), pckt_looper(1)(a)],
+            list(range(0, len(table_data['guesses'][0])))
+        ))
+    return find_combos1(get_start_info(layout))

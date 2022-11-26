@@ -5,7 +5,7 @@
 Set ball location information needed at the start of the program
 """
 from itertools import permutations
-from get_layout_and_picks import get_layout_and_picks
+from get_start_data import get_start_data
 
 def get_start_info(layout):
     """
@@ -49,29 +49,10 @@ def get_start_info(layout):
     @return dict -- Information about the ball locations.
     """
     def get_bit_patterns(info):
-        def brk_down_binary(indx):
-            def inner_brk_down_binary(numb):
-                return (indx // (2 ** numb)) % 2
-            return inner_brk_down_binary
-        def step_thru_combos(indx):
-            return list(map(brk_down_binary(indx),
-                        list(range(0, len(info['remaining'])))))
-        def inner_tec():
-            return list(map(step_thru_combos,
-                    list(range(0, 2 ** len(info['remaining'])))))
-        return inner_tec
-
-    def get_remaining(rem_list):
-        def get_rem_lev2(rem_list):
-            def get_lev2_inner1(bnumbs):
-                def get_lev2_inner2(indx0n):
-                    return rem_list[indx0n][bnumbs[indx0n]]
-                return get_lev2_inner2
-            return get_lev2_inner1
-        def get_remaining_inner(rem_lst_indx):
-            return list(map(get_rem_lev2(rem_list)(rem_lst_indx),
-                        list(range(0,len(rem_list)))))
-        return get_remaining_inner
+        return list(map(lambda b :
+            list(map(lambda a : (b // (2 ** a)) % 2,
+            list(range(0, len(info['remaining']))))),
+            list(range(0, 2 ** len(info['remaining'])))))
 
     def get_right_list(left_list):
         def fill_one_list(left_list):
@@ -83,43 +64,42 @@ def get_start_info(layout):
                 return foli2
             def fill_one_list_inner(indx):
                 return list(map(foli1(indx), list(range(0,
-                                                len(left_list[indx])))))
+                    len(left_list[indx])))))
             return fill_one_list_inner
-        def inner_grl():
-            return list(map(fill_one_list(left_list),
-                        list(range(0, len(left_list)))))
-        return inner_grl
+        return list(map(fill_one_list(left_list),
+            list(range(0, len(left_list)))))
 
     def get_both_lists(left_list):
-        return [left_list, list(get_right_list(left_list)())]
+        return [left_list, list(get_right_list(left_list))]
+
+    def get_remaining(rem_list):
+        def get_remaining_inner(rem_lst_indx):
+            return list(map(lambda a : rem_list[a][rem_lst_indx[a]],               
+                list(range(0,len(rem_list)))))
+        return get_remaining_inner
 
     def get_rem(info):
         return list(map(get_remaining(info['remaining']),
-                        get_bit_patterns(info)()))
+            get_bit_patterns(info)))
 
     def get_strt_sides(info):
         def count_pocketed(side):
             return sum(list(map(len, info['layout']['table'][side]))) + len(
-                    info['layout']['extra_b'][side]) + len(
-                    get_both_lists(get_rem(info))[0][side])
-        def get_side_inner():
-            return list(map(count_pocketed, [0, 1]))
-        return get_side_inner
+                info['layout']['extra_b'][side]) + len(
+                get_both_lists(get_rem(info))[0][side])
+        return list(map(count_pocketed, [0, 1]))
 
     def get_start_call(info):
         def one_bpat(bcount):
             if bcount == 8:
                 return list(set(permutations([3, 3, 2], 3)))
             return list(set(permutations([3, 3, 1], 3))) + \
-                    list(set(permutations([3, 2, 2], 3)))
-        def bpatterns(side_info):
-            return [one_bpat(side_info[0]), one_bpat(side_info[1])]
+                list(set(permutations([3, 2, 2], 3)))
         def get_tot_balls_plus_pattern(side_info):
             return dict([["total_balls", side_info],
-                         ["ball_patterns", bpatterns(side_info)]])
-        def get_start_wrap():
-            return info | dict([["guesses", get_both_lists(get_rem(info))]]
-                    ) | get_tot_balls_plus_pattern(get_strt_sides(info)())
-        return get_start_wrap
+                ["ball_patterns",
+                [one_bpat(side_info[0]), one_bpat(side_info[1])]]])
+        return info | dict([["guesses", get_both_lists(get_rem(info))]]
+            ) | get_tot_balls_plus_pattern(get_strt_sides(info))
 
-    return get_start_call(get_layout_and_picks(layout))()
+    return get_start_call(get_start_data(layout))
